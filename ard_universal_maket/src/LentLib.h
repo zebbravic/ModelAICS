@@ -31,7 +31,7 @@
 
 struct segment
 {
-	byte num;
+	word num;
 	byte pin;
 	byte lentSize;
 	Adafruit_NeoPixel* lent;
@@ -41,13 +41,13 @@ struct segment
 
 struct lent
 {
-	byte channel;
+	word channel;
 	byte mode;
 	byte RED;
 	byte GREEN;
 	byte BLUE;
 	byte segCnt;
-	byte* segArr;
+	word* segArr;
 	unsigned long nextStep;
 	bool channelState;
 	byte state;
@@ -57,8 +57,8 @@ struct lent
 
 bool addLent(byte* params);
 bool addSegment(byte* params);
-byte actLent(byte channel);
-byte deactLent(byte channel);
+byte actLent(word channel);
+byte deactLent(word channel);
 void checkLent();
 lent lightOnOneFlow(lent tLent);
 lent lightOnFill(lent tLent);

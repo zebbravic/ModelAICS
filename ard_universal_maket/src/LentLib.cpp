@@ -11,6 +11,7 @@ byte lentsNum = 0, segmentsNum = 0;
 bool addSegment(byte* params)
 {
 	segment* tSegments = new segment[segmentsNum + 1];
+	word num = word(params[2],params[3]);
 	bool flag=false;
 	for (byte i = 0; i < segmentsNum; i++)
 	{
@@ -31,7 +32,7 @@ bool addSegment(byte* params)
 	tSegment.pin=params[0];
 	tSegment.lentSize=params[1]+1;
 	tSegment.curPixel=params[1];
-		tSegment.num=params[2];
+		tSegment.num=num;
 		// Serial.print("num ");
 		// Serial.println(tSegment.num);
 	Adafruit_NeoPixel* tLent =  new Adafruit_NeoPixel(tSegment.lentSize,tSegment.pin);
@@ -57,9 +58,10 @@ bool addLent(byte* params)
 {
 	lent* tLents = new lent[lentsNum+1];
 	bool flag=false;
+	word channel=word(params[0],params[1]);
 	for(byte i=0;i<lentsNum;i++)
 	{
-		if(lents[i].channel!=params[0])
+		if(lents[i].channel!=channel)
 		{
 			tLents[i]=lents[i];
 		}
@@ -72,12 +74,12 @@ bool addLent(byte* params)
 	if(!flag)
 	{
 	lent tLent;
-	tLent.channel=params[0];
-	tLent.mode=params[1];
-	tLent.RED=params[2];
-	tLent.GREEN=params[3];
-	tLent.BLUE=params[4];
-	tLent.segCnt=params[5];
+	tLent.channel=channel;
+	tLent.mode=params[2];
+	tLent.RED=params[3];
+	tLent.GREEN=params[4];
+	tLent.BLUE=params[5];
+	tLent.segCnt=params[6];
 	tLent.channelState=false;
 	tLent.state=LOW;
 	tLent.nextStep=0;
@@ -97,13 +99,13 @@ bool addLent(byte* params)
 	// 		params[5]--;
 	//
 	// }
-	byte* tSegArr = new byte[params[5]];
+	word* tSegArr = new word[params[6]];
 	for(byte i=0;i<tLent.segCnt;i++)
 	{
-			tSegArr[i]=params[6+i];
+			tSegArr[i]=word(params[7+i*2],params[8+i*2]);
 
 	}
-	tLent.segCnt=params[5];
+	tLent.segCnt=params[6];
 	tLent.segArr=tSegArr;
 	// segments[0].lent->setPixelColor(1,0,0,128);
 	// segments[0].lent->show();
@@ -126,7 +128,7 @@ bool addLent(byte* params)
 }
 
 
-byte actLent(byte channel)
+byte actLent(word channel)
 {
 	bool flag=false;
 	for(byte i=0;i<lentsNum;i++)
@@ -145,7 +147,7 @@ byte actLent(byte channel)
 	}
 }
 
-byte deactLent(byte channel)
+byte deactLent(word channel)
 {
 	for(byte i=0;i<lentsNum;i++)
 	{

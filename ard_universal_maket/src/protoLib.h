@@ -58,17 +58,17 @@ struct msg
 struct DOut
 {
 	byte pin;
-	byte num;
+	word num;
 	//unsigned long int timeout;
 };
 
 struct metaDOut
 {
-	byte channel;
+	word channel;
 	byte mode;
 	byte channelState;
 	byte DOutCnt;
-	byte* dOutArr;
+	word* dOutArr;
 	byte state;
 	byte intens;
 	byte direction;
@@ -78,7 +78,7 @@ struct metaDOut
 
 struct ActCnl
 {
-	byte channel;
+	word channel;
 	unsigned long int timout;
 };
 
@@ -104,8 +104,8 @@ void deactAllChannel();
 void deactLastChannel();
 void checkChannel();
 
-void actMetaDOut(byte channel);
-void deactMetaDOut(byte channel);
+void actMetaDOut(word channel);
+void deactMetaDOut(word channel);
 void checkMetaDOut();
 
 byte getActCnlNum();

@@ -4,7 +4,7 @@
 
 #include "protoLib.h"
 
-byte dOutNum=0, metaDOutNum=0, actCnlNum=0, state=WORKMODE_BOOT;
+word dOutNum=0, metaDOutNum=0, actCnlNum=0, state=WORKMODE_BOOT;
 DOut* dOuts;
 metaDOut* metaDOuts;
 ActCnl* cnlArr;
@@ -164,22 +164,22 @@ msg parseBuffer()
 			break;
 		case CODE_BLOCK_ERR: buffMessage.opsSize=1;
 			break;
-		case CODE_INIT_DOUT: buffMessage.opsSize = 2;
+		case CODE_INIT_DOUT: buffMessage.opsSize = 3;
 			break;
-		case CODE_INIT_SEGM: buffMessage.opsSize=3;
+		case CODE_INIT_SEGM: buffMessage.opsSize=4;
 			break;
-		case CODE_ACT_CNL: buffMessage.opsSize = 1;
+		case CODE_ACT_CNL: buffMessage.opsSize = 2;
 			break;
-		case CODE_DEACT_CNL: buffMessage.opsSize = 1;
+		case CODE_DEACT_CNL: buffMessage.opsSize = 2;
 			break;
 		case CODE_DEACT_ALL: buffMessage.opsSize = 0;
 			break;
 		case CODE_DEACT_LAST: buffMessage.opsSize = 0;
 			break;
-		case CODE_INIT_LENT: buffMessage.opsSize = 6;
+		case CODE_INIT_LENT: buffMessage.opsSize = 7;
 			break;
 		case CODE_INIT_METADOUT:
-			buffMessage.opsSize=3;
+			buffMessage.opsSize=4;
 			break;
 		default:
 			buffMessage.opsSize = 0;
@@ -204,19 +204,19 @@ msg parseBuffer()
 		}
 		if(buffMessage.code==CODE_INIT_LENT)
 		{
-			byte* opsLent = new byte[buffMessage.opsSize+buffMessage.operands[5]];
-			while(Serial.available()<buffMessage.operands[5])
+			byte* opsLent = new byte[buffMessage.opsSize+buffMessage.operands[6]];
+			while(Serial.available()<buffMessage.operands[6])
 				{
 					true;
 				}
 				byte j=0;
-				while(j!=buffMessage.opsSize)
+				while(j!=buffMessage.opsSize*2)
 				{
 					opsLent[j]=ops[j];
 					j++;
 				}
-				buffMessage.opsSize+=buffMessage.operands[5];
-				while(j!=buffMessage.opsSize)
+				buffMessage.opsSize+=buffMessage.operands[6];
+				while(j!=buffMessage.opsSize*2)
 				{
 					opsLent[j]=Serial.read()-mode;
 					j++;
@@ -227,19 +227,19 @@ msg parseBuffer()
 			}
 			if(buffMessage.code==CODE_INIT_METADOUT)
 			{
-				byte* opsMeta = new byte[buffMessage.opsSize+buffMessage.operands[2]];
-				while(Serial.available()<buffMessage.operands[2])
+				byte* opsMeta = new byte[buffMessage.opsSize+buffMessage.operands[3]];
+				while(Serial.available()<buffMessage.operands[3])
 				{
 					true;
 				}
 				byte j=0;
-				while(j!=buffMessage.opsSize)
+				while(j!=buffMessage.opsSize*2)
 				{
 					opsMeta[j]=ops[j];
 					j++;
 				}
-				buffMessage.opsSize+=buffMessage.operands[2];
-				while(j!=buffMessage.opsSize)
+				buffMessage.opsSize+=buffMessage.operands[3];
+				while(j!=buffMessage.opsSize*2)
 				{
 					opsMeta[j]=Serial.read()-mode;
 					j++;
@@ -379,10 +379,11 @@ bool addDOut(byte* params)
 {
 	DOut* tDouts = new DOut[dOutNum + 1];
 	bool flag=false;
+	word num=word(params[1],params[2]);
 	for (byte i = 0; i < dOutNum; i++)
 	{
 		tDouts[i] = dOuts[i];
-		if(dOuts[i].num==params[1])
+		if(dOuts[i].num==num)
 		{
 			flag=true;
 			break;
@@ -392,7 +393,7 @@ bool addDOut(byte* params)
 	{
 		DOut tDOut;
 		tDOut.pin = params[0];
-		tDOut.num = params[1];
+		tDOut.num = num;
 		tDouts[dOutNum] = tDOut;
 		delete[] dOuts;
 		dOutNum++;
@@ -423,9 +424,9 @@ bool addMetaDOut(byte* params)
 	if(!flag)
 	{
 		metaDOut tMetaDOut;
-		tMetaDOut.channel=params[0];
-		tMetaDOut.mode=params[1];
-		tMetaDOut.DOutCnt=params[2];
+		tMetaDOut.channel=word(params[0],params[1]);
+		tMetaDOut.mode=params[2];
+		tMetaDOut.DOutCnt=params[3];
 		tMetaDOut.channelState=false;
 		tMetaDOut.stepTimout=0;
 		tMetaDOut.direction=1;
@@ -434,13 +435,13 @@ bool addMetaDOut(byte* params)
 		// Serial.println(params[1]);
 		// Serial.println(params[2]);
 
-		byte* tDoutArr = new byte[params[2]];
+		word* tDoutArr = new word[params[3]];
 		for(byte i=0;i<tMetaDOut.DOutCnt;i++)
 		{
-				tDoutArr[i]=params[3+i];
+				tDoutArr[i]=word(params[4+i*2],params[5+i*2]);
 
 		}
-		tMetaDOut.DOutCnt=params[2];
+		tMetaDOut.DOutCnt=params[3];
 		tMetaDOut.dOutArr=tDoutArr;
 		tMetaDOuts[metaDOutNum] = tMetaDOut;
 		delete[] metaDOuts;
@@ -459,7 +460,7 @@ bool addMetaDOut(byte* params)
 
 void actChannel(byte* params)
 {
-	byte channel=params[0];
+	word channel=word(params[0],params[1]);
 	//Serial.println(channel);
 	actMetaDOut(channel);
 	unsigned long int milli=millis();
@@ -500,7 +501,7 @@ void actChannel(byte* params)
 
 void deactChannel(byte* params)
 {
-	byte channel=params[0];
+	word channel=word(params[0],params[1]);
 	if (actCnlNum > 0)
 	{
 		deactMetaDOut(channel);
@@ -533,7 +534,7 @@ void deactLastChannel()
 {
 	if(actCnlNum>0)
 	{
-		byte params[1]={cnlArr[actCnlNum-1].channel};
+		byte params[2]={highByte(cnlArr[actCnlNum-1].channel),lowByte(cnlArr[actCnlNum-1].channel)};
 		deactChannel(params);
 	}
 }
@@ -547,7 +548,7 @@ void deactAllChannel()
 
 
 
-void actMetaDOut(byte channel)
+void actMetaDOut(word channel)
 {
 	bool flag=false;
 	// Serial.println("entered actMetaDOut");
@@ -568,7 +569,7 @@ byte getActCnlNum()
 {
 	return actCnlNum;
 }
-void deactMetaDOut(byte channel)
+void deactMetaDOut(word channel)
 {
 	for(byte i=0;i<metaDOutNum;i++)
 	{
