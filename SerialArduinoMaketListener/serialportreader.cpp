@@ -152,7 +152,7 @@ void SerialPortReader::initController(quint8 address)
 {
     adress = address;
     QProcess getContrParams;
-    qDebug()<<"entered initController()";
+    //qDebug()<<"entered initController()";
     QString exec = "php";
     QStringList params;
     params << "getActuators.php" << QString::number(address);
@@ -160,7 +160,7 @@ void SerialPortReader::initController(quint8 address)
     getContrParams.waitForFinished(); // sets current thread to sleep and waits for pingProcess end
     QString output(getContrParams.readAllStandardOutput());
     QStringList outputList = output.split(QRegExp("[\r\n]"),QString::SkipEmptyParts);
-    qDebug()<<outputList;
+    //qDebug()<<outputList;
     msg messageToWrite;
     messageToWrite.adress=address;
     messageToWrite.code=CODE_INIT_SYNC;
@@ -173,41 +173,50 @@ void SerialPortReader::initController(quint8 address)
     {
         QString str=outputList[i];
         QStringList params=str.split(" ", QString::SkipEmptyParts);
-        switch (params[0].toInt()) {
+        switch (params[0].toUInt()) {
         case 0:
             messageToWrite.code=CODE_INIT_DOUT;
             messageToWrite.operands="";
-            messageToWrite.operands+=params[2].toInt();//pin
-            messageToWrite.operands+=params[3].toInt();//channel
-//            messageToWrite.operands+=params[4].toInt();//mode
+            messageToWrite.operands+=params[2].toUInt();//pin
+            messageToWrite.operands+=((params[3].toUInt()>>8)&0xFF);//num HighByte
+            messageToWrite.operands+=((params[3].toUInt())&0xFF);//num LowByte
+//            messageToWrite.operands+=params[4].toUInt();//mode
             break;
         case 1:
             messageToWrite.code=CODE_INIT_METADOUT;
             messageToWrite.operands="";
-            messageToWrite.operands+=params[2].toInt();//channel
-            messageToWrite.operands+=params[3].toInt();//mode
-            messageToWrite.operands+=params[4].toInt();//red
+            messageToWrite.operands+=((params[2].toUInt()>>8)&0xFF);//channel HighByte
+            messageToWrite.operands+=((params[2].toUInt())&0xFF);//channel LowByte
+            messageToWrite.operands+=params[3].toUInt();//mode
+            messageToWrite.operands+=params[4].toUInt();//doutCnt
             for(int j=5;j<params.size();j++)
-                messageToWrite.operands+=params[j].toInt();
+            {
+                messageToWrite.operands+=((params[j].toUInt()>>8)&0xFF);//doutnum HighByte
+                messageToWrite.operands+=((params[j].toUInt())&0xFF);//doutnum LowByte
+            }
             break;
         case 2:
             messageToWrite.code=CODE_INIT_SEGM;
             messageToWrite.operands="";
-            messageToWrite.operands+=params[2].toInt();//pin
-            messageToWrite.operands+=params[3].toInt();//size
-            messageToWrite.operands+=params[4].toInt();//num
+            messageToWrite.operands+=params[2].toUInt();//pin
+            messageToWrite.operands+=params[3].toUInt();//size
+            messageToWrite.operands+=((params[4].toUInt()>>8)&0xFF);//num HighByte
+            messageToWrite.operands+=((params[4].toUInt())&0xFF);//num LowByte
             break;
         case 3:
             messageToWrite.code=CODE_INIT_LENT;
             messageToWrite.operands="";
-            messageToWrite.operands+=params[2].toInt();//channel
-            messageToWrite.operands+=params[3].toInt();//mode
-            messageToWrite.operands+=params[4].toInt();//red
-            messageToWrite.operands+=params[5].toInt();//green
-            messageToWrite.operands+=params[6].toInt();//blue
-            messageToWrite.operands+=params[7].toInt();//segCnt
-            for(int j=8;j<params.size();j++)
-                messageToWrite.operands+=params[j].toInt();
+            messageToWrite.operands+=((params[2].toUInt()>>8)&0xFF);//channel HighByte
+            messageToWrite.operands+=((params[2].toUInt())&0xFF);//channel LowByte
+            messageToWrite.operands+=params[3].toUInt();//mode
+            messageToWrite.operands+=params[4].toUInt();//red
+            messageToWrite.operands+=params[5].toUInt();//green
+            messageToWrite.operands+=params[6].toUInt();//blue
+            messageToWrite.operands+=params[7].toUInt();//segCnt
+            for(int j=8;j<params.size();j++){
+                messageToWrite.operands+=((params[j].toUInt()>>8)&0xFF);//segnum HighByte
+                messageToWrite.operands+=((params[j].toUInt())&0xFF);//segnum LowByte
+            }
             break;
         default:
             break;
@@ -267,7 +276,7 @@ void SerialPortReader::writeMessage(msg message)
     messageAsArr+=message.code;
     messageAsArr+=message.operands;
     m_serialPort->write(messageAsArr);
-    qDebug()<<messageAsArr;
+    //qDebug()<<messageAsArr;
 }
 
 void SerialPortReader::resetPort()

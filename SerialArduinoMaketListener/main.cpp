@@ -24,6 +24,6 @@ int main(int argc, char *argv[])
         file.close(); // Закрываем файл
     }
 
-    qDebug() << "endtext";
+    //qDebug() << "endtext";
     return a.exec();
 }

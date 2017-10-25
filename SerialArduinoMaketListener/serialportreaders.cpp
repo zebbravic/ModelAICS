@@ -33,7 +33,7 @@ SerialPortReaders::SerialPortReaders(QObject *parent): QObject(parent)
 //           ui->textinfo->append(QString::fromUtf8("Сервер запущен!"));
 //           qDebug() << QString::fromUtf8("Сервер запущен!");
 //   }
-    qDebug() << readers.size();
+//    qDebug() << readers.size();
     QCoreApplication::processEvents();
 
 }
