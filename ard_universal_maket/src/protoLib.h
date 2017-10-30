@@ -4,6 +4,7 @@
 #define _PROTOLIB_h
 
 #include "LentLib.h"
+#include "constants.h"
 #if defined(ARDUINO) && ARDUINO >= 100
 	#include "arduino.h"
 #else

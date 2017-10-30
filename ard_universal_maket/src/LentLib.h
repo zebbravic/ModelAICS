@@ -5,6 +5,7 @@
 
 
 #include "Adafruit_NeoPixel.h"
+#include "constants.h"
 #if defined(ARDUINO) && ARDUINO >= 100
 	#include "arduino.h"
 #else
@@ -12,22 +13,7 @@
 #endif
 
 
-#define STEP_TIMEOUT 1000L
-#define STEP_TIMEOUT_FLOWPIXEL 200L
-#define STEP_TIMEOUT_PWM 100L
-#define CHANNEL_TIMEOUT 180000L
 
-#define LENTMODE_ONE_FLOAT 0
-#define LENTMODE_FILL 1
-#define LENTMODE_BLINK 2
-#define LENTMODE_WAVE 3
-
-
-#define CODE_INIT_SEGM 18
-#define CODE_INIT_LENT 19
-
-// #define CODE_INIT_SEGM 6
-// #define CODE_INIT_LENT 7
 
 struct segment
 {
