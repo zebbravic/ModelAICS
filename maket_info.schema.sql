@@ -34,6 +34,7 @@ CREATE TABLE `appartments` (
   `objName` text,
 --  `tip` text,
   `status` int(11) DEFAULT NULL,
+  `CRMAprtCode` text,
   PRIMARY KEY (`id`),
   KEY `channelID` (`channelID`),
   KEY `floorID` (`floorID`),
@@ -72,6 +73,8 @@ CREATE TABLE `building` (
   `name` text,
   `channelID` int(11) DEFAULT NULL,
   `objName` text,
+  `CRMAddressBuild` text,
+  `CRMBuildingID` text,
   PRIMARY KEY (`id`),
   KEY `channelID` (`channelID`),
   CONSTRAINT `building_ibfk_1` FOREIGN KEY (`channelID`) REFERENCES `channel` (`id`)
@@ -242,12 +245,14 @@ CREATE TABLE `section` (
   `name` text,
   `channelID` int(11) DEFAULT NULL,
   `objName` text,
+  `CRMSectionName` text,
+  `CRMSectionID` text,
   PRIMARY KEY (`id`),
   KEY `channelID` (`channelID`),
   KEY `buildingID` (`buildingID`),
   CONSTRAINT `section_ibfk_1` FOREIGN KEY (`channelID`) REFERENCES `channel` (`id`),
   CONSTRAINT `section_ibfk_2` FOREIGN KEY (`buildingID`) REFERENCES `building` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
