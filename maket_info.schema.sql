@@ -31,6 +31,7 @@ CREATE TABLE `appartments` (
   `channelID` int(11) DEFAULT NULL,
   `roomsCnt` int(11) DEFAULT NULL,
   `number` int(11) DEFAULT NULL,
+  `numOnFloor` int(11) DEFAULT NULL,
   `objName` text,
 --  `tip` text,
   `status` int(11) DEFAULT NULL,
