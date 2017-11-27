@@ -92,6 +92,7 @@ DROP TABLE IF EXISTS `channel`;
 CREATE TABLE `channel` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` int(11) DEFAULT NULL,
+  `type` int(11) DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -292,6 +293,41 @@ CREATE TABLE `segments` (
   `num` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `channelQuery`
+--
+DROP TABLE IF EXISTS `channelQuery`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `building` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `channelID` int(11) DEFAULT NULL,
+  `queryText` text,
+  PRIMARY KEY (`id`),
+  KEY `channelID` (`channelID`),
+  CONSTRAINT `channelquery_ibfk_1` FOREIGN KEY (`channelID`) REFERENCES `channel` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `channelList`
+--
+DROP TABLE IF EXISTS `channelList`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `building` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `channelID` int(11) DEFAULT NULL,
+  `channelList` text,
+  PRIMARY KEY (`id`),
+  KEY `channelID` (`channelID`),
+  CONSTRAINT `channellist_ibfk_1` FOREIGN KEY (`channelID`) REFERENCES `channel` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+
+/*!40101 SET character_set_client = @saved_cs_client */;
+
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
