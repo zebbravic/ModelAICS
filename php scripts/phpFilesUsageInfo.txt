@@ -1,0 +1,53 @@
+[for 23.01.2018]
+actChannel.php
+same as at Sreda
+
+getBuildings.php
+same as at Sreda
+
+searchFlat.php
+same as at Sreda
+
+
+
+
+
+getAvailableFloors.php
+input POST params
+section - section name (formate as in project (e.g. 1, 2))
+bObjName - building objName (formate as b.{korpName}-{order}-{orderInOrder} (for pravda e.g. b.k1-1-1))
+output
+json {"floors":[{(number of floor, where has available aparts}]}
+
+getAvailableAparts.php
+input POST params
+section - section name (formate as in project (e.g. 1, 2))
+floor - floor num in building (formate as in project (e.g. 1, 2))
+bObjName - building objName (formate as b.{korpName}-{order}-{orderInOrder} (for pravda e.g. b.k1-1-1))
+output
+json {"aprts":[{(numOnFloor for available aparts}]}
+
+
+
+getNumOnFloorByGlobal.php
+input POST params
+number - global number of apart (formate as in project (e.g. 1, 2))
+floor - floor num in building (formate as in project (e.g. 1, 2))
+bObjName - building objName (formate as b.{korpName}-{order}-{orderInOrder} (for pravda e.g. b.k1-1-1))
+output
+json {"numOnFloor":(numOnFloor of searched apart), "floor"=(floor's numInBuilding of searched apart), "section":(section's name of searched apart)}
+
+
+
+hasBlockingPages.php
+no input
+output
+json {"allow":(true if no founded users at blocking pages (allow to move to new page), false if founded user at blocking page(denied to move to new page))}
+
+
+searchFlatByType.php
+input
+type - appartment type (e.g. ST.1)
+bObjName - building objName (formate as b.{korpName}-{order}-{orderInOrder} (for pravda e.g. b.k1-1-1))
+output
+same as searchFlat.php

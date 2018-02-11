@@ -4,19 +4,15 @@
 	$username = "dbUser";
 	$password = "secretPass";
 	$dbName = "maket_info";
-	if (isset($_POST['minS']) && isset($_POST['maxS']) 
-		&& isset($_POST['minRooms']) && isset($_POST['maxRooms'])
-		&& isset ($_POST['minFloor']) && isset($_POST['maxFloor'])
-		&& isset ($_POST['bObjName']))
+	if (isset($_POST['type']) && isset ($_POST['bObjName']))
 	{
-		$minS=$_POST['minS'];
-		$maxS=$_POST['maxS'];
-		$minRooms=$_POST['minRooms'];
-		$maxRooms=$_POST['maxRooms'];
-		$minFloor=$_POST['minFloor'];
-		$maxFloor=$_POST['maxFloor'];
+		$typeNotEscaped=$_POST['type'];
 		$bObjName=$_POST['bObjName'];
 		$building="\"$bObjName\"";
+		$type="\"$typeNotEscaped\"";
+		#$building="\"b.k1-1-1\"";
+		#$type="\"ST.1\"";
+
 		$link=MYSQLI_CONNECT($hostname,$username,$password,$dbName) OR DIE("Error creating connection");
 		
 		if (mysqli_connect_errno()) {
@@ -34,10 +30,8 @@
 		join building as b on f.buildingID = b.ID
 		join appartmentsType as apType on aprt.type = apType.ID 
 		where b.objName = $building
-		and aprt.roomsCnt between $minRooms and $maxRooms
-		and aprt.size between $minS and $maxS
-		and f.numInBuilding between $minFloor and $maxFloor
-		and aprt.status = 4
+		and apType.name = $type
+		and aprt.status = 4 
 		order by 1";
 		$flats=array();
 		
