@@ -1,8 +1,8 @@
--- MySQL dump 10.13  Distrib 5.7.18, for Linux (x86_64)
+-- MySQL dump 10.13  Distrib 5.7.20, for Linux (x86_64)
 --
 -- Host: localhost    Database: maket_info
 -- ------------------------------------------------------
--- Server version	5.7.18-0ubuntu0.16.04.1
+-- Server version	5.7.20-0ubuntu0.16.04.1
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -33,9 +33,14 @@ CREATE TABLE `appartments` (
   `number` int(11) DEFAULT NULL,
   `numOnFloor` int(11) DEFAULT NULL,
   `objName` text,
---  `tip` text,
   `status` int(11) DEFAULT NULL,
   `CRMAprtCode` text,
+  `CRMLightSide` text,
+  `CRMLightSide2` text,
+  `CRMLightSide3` text,
+  `CRMWindowView` text,
+  `CRMWindowView2` text,
+  `CRMWindowView3` text,
   PRIMARY KEY (`id`),
   KEY `channelID` (`channelID`),
   KEY `floorID` (`floorID`),
@@ -45,7 +50,7 @@ CREATE TABLE `appartments` (
   CONSTRAINT `appartments_ibfk_2` FOREIGN KEY (`floorID`) REFERENCES `floor` (`id`),
   CONSTRAINT `appartments_ibfk_3` FOREIGN KEY (`sectionsID`) REFERENCES `section` (`id`),
   CONSTRAINT `appartments_ibfk_4` FOREIGN KEY (`type`) REFERENCES `appartmentsType` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -59,7 +64,7 @@ CREATE TABLE `appartmentsType` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` text,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -79,7 +84,7 @@ CREATE TABLE `building` (
   PRIMARY KEY (`id`),
   KEY `channelID` (`channelID`),
   CONSTRAINT `building_ibfk_1` FOREIGN KEY (`channelID`) REFERENCES `channel` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -92,8 +97,44 @@ DROP TABLE IF EXISTS `channel`;
 CREATE TABLE `channel` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` int(11) DEFAULT NULL,
-  `type` int(11) DEFAULT 0,
+  `type` int(11) DEFAULT '0',
+  `blocking` int(11) DEFAULT '0',
+  `comment` text,
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `channelList`
+--
+
+DROP TABLE IF EXISTS `channelList`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `channelList` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `channelID` int(11) DEFAULT NULL,
+  `channelList` text,
+  PRIMARY KEY (`id`),
+  KEY `channelID` (`channelID`),
+  CONSTRAINT `channellist_ibfk_1` FOREIGN KEY (`channelID`) REFERENCES `channel` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `channelQuery`
+--
+
+DROP TABLE IF EXISTS `channelQuery`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `channelQuery` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `channelID` int(11) DEFAULT NULL,
+  `queryText` text,
+  PRIMARY KEY (`id`),
+  KEY `channelID` (`channelID`),
+  CONSTRAINT `channelquery_ibfk_1` FOREIGN KEY (`channelID`) REFERENCES `channel` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -109,8 +150,51 @@ CREATE TABLE `dout` (
   `pin` int(11) DEFAULT NULL,
   `controllerAddress` int(11) DEFAULT NULL,
   `num` int(11) DEFAULT NULL,
+  `comment` text,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `doutInMetaRange`
+--
+
+DROP TABLE IF EXISTS `doutInMetaRange`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `doutInMetaRange` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `metaDOutID` int(11) DEFAULT NULL,
+  `rangeStartDOut` int(11) DEFAULT NULL,
+  `rangeEndDOut` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `metaDOutID` (`metaDOutID`),
+  KEY `rangeStartDOut` (`rangeStartDOut`),
+  KEY `rangeEndDOut` (`rangeEndDOut`),
+  CONSTRAINT `doutInMetaRange_ibfk_1` FOREIGN KEY (`metaDOutID`) REFERENCES `metaDOut` (`id`),
+  CONSTRAINT `doutInMetaRange_ibfk_2` FOREIGN KEY (`rangeStartDOut`) REFERENCES `dout` (`id`),
+  CONSTRAINT `doutInMetaRange_ibfk_3` FOREIGN KEY (`rangeEndDOut`) REFERENCES `dout` (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `doutRandomizer`
+--
+
+DROP TABLE IF EXISTS `doutRandomizer`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `doutRandomizer` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `metaDOutID` int(11) DEFAULT NULL,
+  `type` int(11) DEFAULT '0',
+  `maxGlobal` int(11) DEFAULT '100',
+  `maxPerDevice` int(11) DEFAULT '100',
+  `changeTimeout` int(11) DEFAULT '10',
+  PRIMARY KEY (`id`),
+  KEY `metaDOutID` (`metaDOutID`),
+  CONSTRAINT `doutrandomizer_ibfk_1` FOREIGN KEY (`metaDOutID`) REFERENCES `metaDOut` (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -129,7 +213,7 @@ CREATE TABLE `doutsInMeta` (
   KEY `doutID` (`doutID`),
   CONSTRAINT `doutsInMeta_ibfk_1` FOREIGN KEY (`metaDOutID`) REFERENCES `metaDOut` (`id`),
   CONSTRAINT `doutsInMeta_ibfk_2` FOREIGN KEY (`doutID`) REFERENCES `dout` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -142,15 +226,18 @@ DROP TABLE IF EXISTS `floor`;
 CREATE TABLE `floor` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `buildingID` int(11) NOT NULL,
+  `sectionID` int(11) DEFAULT NULL,
   `numInBuilding` int(11) NOT NULL,
   `channelID` int(11) DEFAULT NULL,
   `objName` text,
   PRIMARY KEY (`id`),
   KEY `channelID` (`channelID`),
   KEY `buildingID` (`buildingID`),
+  KEY `sectionID` (`sectionID`),
   CONSTRAINT `floor_ibfk_1` FOREIGN KEY (`channelID`) REFERENCES `channel` (`id`),
-  CONSTRAINT `floor_ibfk_2` FOREIGN KEY (`buildingID`) REFERENCES `building` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  CONSTRAINT `floor_ibfk_2` FOREIGN KEY (`buildingID`) REFERENCES `building` (`id`),
+  CONSTRAINT `floor_ibfk_3` FOREIGN KEY (`sectionID`) REFERENCES `section` (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -170,7 +257,7 @@ CREATE TABLE `infrastructure` (
   PRIMARY KEY (`id`),
   KEY `channelID` (`channelID`),
   CONSTRAINT `infrastructure_ibfk_1` FOREIGN KEY (`channelID`) REFERENCES `channel` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -189,10 +276,11 @@ CREATE TABLE `lents` (
   `red` tinyint(3) unsigned DEFAULT NULL,
   `green` tinyint(3) unsigned DEFAULT NULL,
   `blue` tinyint(3) unsigned DEFAULT NULL,
+  `num` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `channelID` (`channelID`),
   CONSTRAINT `lents_ibfk_1` FOREIGN KEY (`channelID`) REFERENCES `channel` (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -206,10 +294,11 @@ CREATE TABLE `metaDOut` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `mode` int(11) DEFAULT NULL,
   `channelID` int(11) DEFAULT NULL,
+  `num` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `channelID` (`channelID`),
   CONSTRAINT `metaDOut_ibfk_1` FOREIGN KEY (`channelID`) REFERENCES `channel` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -254,7 +343,7 @@ CREATE TABLE `section` (
   KEY `buildingID` (`buildingID`),
   CONSTRAINT `section_ibfk_1` FOREIGN KEY (`channelID`) REFERENCES `channel` (`id`),
   CONSTRAINT `section_ibfk_2` FOREIGN KEY (`buildingID`) REFERENCES `building` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -277,6 +366,28 @@ CREATE TABLE `segmentInLent` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `segmentInLentRange`
+--
+
+DROP TABLE IF EXISTS `segmentInLentRange`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `segmentInLentRange` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `lentsID` int(11) DEFAULT NULL,
+  `rangeStartSegment` int(11) DEFAULT NULL,
+  `rangeEndSegment` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `lentsID` (`lentsID`),
+  KEY `rangeStartSegment` (`rangeStartSegment`),
+  KEY `rangeEndSegment` (`rangeEndSegment`),
+  CONSTRAINT `segmentInLentRange_ibfk_1` FOREIGN KEY (`lentsID`) REFERENCES `lents` (`id`),
+  CONSTRAINT `segmentInLentRange_ibfk_2` FOREIGN KEY (`rangeStartSegment`) REFERENCES `segments` (`id`),
+  CONSTRAINT `segmentInLentRange_ibfk_3` FOREIGN KEY (`rangeEndSegment`) REFERENCES `segments` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `segments`
 --
 
@@ -292,42 +403,7 @@ CREATE TABLE `segments` (
   `description` text,
   `num` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
-
---
--- Table structure for table `channelQuery`
---
-DROP TABLE IF EXISTS `channelQuery`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `building` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `channelID` int(11) DEFAULT NULL,
-  `queryText` text,
-  PRIMARY KEY (`id`),
-  KEY `channelID` (`channelID`),
-  CONSTRAINT `channelquery_ibfk_1` FOREIGN KEY (`channelID`) REFERENCES `channel` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `channelList`
---
-DROP TABLE IF EXISTS `channelList`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `building` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `channelID` int(11) DEFAULT NULL,
-  `channelList` text,
-  PRIMARY KEY (`id`),
-  KEY `channelID` (`channelID`),
-  CONSTRAINT `channellist_ibfk_1` FOREIGN KEY (`channelID`) REFERENCES `channel` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
-
-/*!40101 SET character_set_client = @saved_cs_client */;
-
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -339,4 +415,4 @@ CREATE TABLE `building` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-06-12  1:20:33
+-- Dump completed on 2018-01-22 23:57:42
