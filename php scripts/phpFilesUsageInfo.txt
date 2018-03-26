@@ -51,3 +51,10 @@ type - appartment type (e.g. ST.1)
 bObjName - building objName (formate as b.{korpName}-{order}-{orderInOrder} (for pravda e.g. b.k1-1-1))
 output
 same as searchFlat.php
+
+
+tranferFilenameToType.php
+input
+POST filename - appartment's type filename 
+output
+{"type":(typename for CRM)}

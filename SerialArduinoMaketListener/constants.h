@@ -27,14 +27,10 @@
 #define CODE_LOOP_PING 6
 
 // group Pin Modes Codes
-
+// #define CODE_INIT_DOUT 9
 #define CODE_INIT_DOUT 16
 #define CODE_INIT_METADOUT 17
 #define CODE_INIT_DOUTRANDOMIZER 18
-
-// #define CODE_INIT_DOUT 7
-// #define CODE_INIT_METADOUT 8
-// #define CODE_INIT_DOUTRANDOMIZER 9
 
 // #define CODE_INIT_DOUT 6
 // #define CODE_INIT_METADOUT 7
@@ -43,10 +39,8 @@
 #define CODE_ACT_CNL 32
 #define CODE_DEACT_CNL 33
 #define CODE_DEACT_ALL 34
- // #define CODE_DEACT_ALL 9
+// #define CODE_DEACT_ALL 9
 #define CODE_DEACT_LAST 35
-
-#define CODE_INFO 128
 
 
 
@@ -64,15 +58,6 @@
 #define CODE_INIT_SEGM 24
 #define CODE_INIT_LENT 25
 
-
 // #define CODE_INIT_SEGM 6
 // #define CODE_INIT_LENT 7
-
-
-// infoCodes
-
-#define INFOCODE_ACT_DOUTRANDOMIZER 0
-
-
-
 #endif

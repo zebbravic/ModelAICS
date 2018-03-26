@@ -63,6 +63,14 @@
 #include <QTcpServer>
 #include <QSerialPortInfo>
 #include <QCoreApplication>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QFile>
+#include <QDateTime>
+#include <QTimer>
+#include <QTest>
+#include "constants.h"
 
 QT_USE_NAMESPACE
 
@@ -74,41 +82,41 @@ struct msg
 {
     quint8 adress;
     quint8 code;
-    quint8 opsSize;
+    quint16 opsSize;
     QByteArray operands;
 };
 
 
-#define CODE_REBOOTED 0
-#define CODE_NEED_DATA 1
+//#define CODE_REBOOTED 0
+//#define CODE_NEED_DATA 1
 
-#define CODE_INIT_SYNC 2
-#define CODE_SYNC 3
-#define CODE_END_SYNC 4
-#define CODE_BLOCK_ERR 5
+//#define CODE_INIT_SYNC 2
+//#define CODE_SYNC 3
+//#define CODE_END_SYNC 4
+//#define CODE_BLOCK_ERR 5
 
-// group Pin Modes Codes
+//// group Pin Modes Codes
 
-#define CODE_INIT_DOUT 16
-#define CODE_INIT_METADOUT 17
-#define CODE_INIT_SEGM 18
-#define CODE_INIT_LENT 19
+//#define CODE_INIT_DOUT 16
+//#define CODE_INIT_METADOUT 17
+//#define CODE_INIT_SEGM 18
+//#define CODE_INIT_LENT 19
 
-#define CODE_ACT_CNL 24
-#define CODE_DEACT_CNL 25
-#define CODE_DEACT_ALL 26
-#define CODE_DEACT_LAST 27
-
-
-#define LENTMODE_ONE_FLOAT 0
-#define LENTMODE_FILL 1
-#define LENTMODE_BLINK 2
-#define LENTMODE_WAVE 3
+//#define CODE_ACT_CNL 24
+//#define CODE_DEACT_CNL 25
+//#define CODE_DEACT_ALL 26
+//#define CODE_DEACT_LAST 27
 
 
-#define DOUT_MODE_CONST 0
-#define DOUT_MODE_BLINK 1
-#define DOUT_MODE_PWM 2
+//#define LENTMODE_ONE_FLOAT 0
+//#define LENTMODE_FILL 1
+//#define LENTMODE_BLINK 2
+//#define LENTMODE_WAVE 3
+
+
+//#define DOUT_MODE_CONST 0
+//#define DOUT_MODE_BLINK 1
+//#define DOUT_MODE_PWM 2
 
 
 
@@ -128,6 +136,7 @@ public:
 private slots:
     void handleReadyRead();
     void handleError(QSerialPort::SerialPortError error);
+    void TimerRunout();
 
 private:
     int adress;
@@ -140,6 +149,8 @@ private:
     void initController(quint8 address);
     void writeMessage(msg message);
     void resetPort();
+    void loopPing(QByteArray ops);
+    QTimer* timer;
 
 };
 

@@ -1,11 +1,13 @@
 <?php 
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 
 	$hostname = "localhost";
 	$username = "dbUser";
 	$password = "secretPass";
 	$dbName = "maket_info";
-	if ((isset($_POST['numOnfFloor']) && isset($_POST['floor']) && isset($_POST['section']) $$ ($_POST['bObjName']))
-		|| (isset($_POST['number'])  && ($_POST['bObjName']))
+	if ((isset($_POST['numOnFloor']) && isset($_POST['floor']) && isset($_POST['section']) && isset($_POST['bObjName']))
+		|| (isset($_POST['number'])  && isset($_POST['bObjName']))
 		|| isset($_POST['aObjName']))
 	{
 		if( isset($_POST['numOnFloor']) && isset($_POST['floor']) && ($_POST['bObjName']))

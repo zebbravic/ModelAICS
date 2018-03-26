@@ -59,9 +59,13 @@ SerialPortReader::SerialPortReader(QSerialPort *serialPort, QObject *parent)
     , m_serialPort(serialPort)
     , m_standardOutput(stdout)
 {
+    this->timer = new QTimer(this);
+    this->timer->start(10*1000);
+    resetPort();
     connect(m_serialPort, SIGNAL(readyRead()), this, SLOT(handleReadyRead()));
     connect(m_serialPort, static_cast<void (QSerialPort::*)(QSerialPort::SerialPortError)>(&QSerialPort::error),
             this, &SerialPortReader::handleError);
+    connect(timer,SIGNAL(timeout()),this,SLOT(TimerRunout()));
 }
 
 SerialPortReader::~SerialPortReader()
@@ -71,38 +75,50 @@ SerialPortReader::~SerialPortReader()
 void SerialPortReader::handleReadyRead()
 {
 
-    qDebug()<<"read";
+    //qDebug()<<"read";
     m_readData.append(m_serialPort->readAll());
-
+//    qDebug()<<m_readData.size();
     if (m_readData.isEmpty()) {
         //m_standardOutput << QObject::tr("No data was currently available for reading from port %1").arg(m_serialPort->portName()) << endl;
     } else {
         //m_standardOutput << QObject::tr("Data successfully received from port %1").arg(m_serialPort->portName()) << endl;
         //m_standardOutput << m_readData << endl;
-        while((m_readData.size()>2 && !parseBegin)||(parseBegin && m_readData.size()>= messageInBuffer.opsSize))
+        //qDebug()<<m_readData.size();
+
+        while((m_readData.size()>=4 && !parseBegin)||(parseBegin && m_readData.size()>= messageInBuffer.opsSize))
         {
-        if(m_readData.size()>2 && !parseBegin)
+            //qDebug()<<"buffer size"<<m_readData.size()<<" parseBegin "<<parseBegin<<" opsSize "<<messageInBuffer.opsSize;
+        if(m_readData.size()>=4 && !parseBegin)
         {
 
             messageInBuffer.adress = m_readData[0];
             messageInBuffer.code = m_readData[1];
-            switch (messageInBuffer.code) {
-            case CODE_REBOOTED:
-                messageInBuffer.opsSize=1;
-                break;
-            case CODE_NEED_DATA:
-                messageInBuffer.opsSize=1;
-                break;
-            case CODE_END_SYNC:
-                messageInBuffer.opsSize=2;
-                break;
-            default:
-                messageInBuffer.opsSize=1;
-                break;
-            }
+            messageInBuffer.opsSize = m_readData[2]*256+m_readData[3];
+
+//            switch (messageInBuffer.code) {
+//            case CODE_REBOOTED:
+//                messageInBuffer.opsSize=1;
+//                break;
+//            case CODE_NEED_DATA:
+//                messageInBuffer.opsSize=1;
+//                break;
+//            case CODE_END_SYNC:
+//                messageInBuffer.opsSize=2;
+//                break;
+//            default:
+//                messageInBuffer.opsSize=1;
+//                break;
+//            }
             parseBegin=true;
-            m_readData.remove(0,2);
-            qDebug()<<"succesfully recieved to "<<messageInBuffer.adress<<" message with code "<<messageInBuffer.code<<" with operands "<<messageInBuffer.operands;
+            m_readData.remove(0,4);
+//            QFile log("SAML.log");
+//            if(log.open(QIODevice::ReadWrite|QIODevice::Append))
+//            {
+//                QTextStream writeStream(&log); // Создаем объект класса QTextStream
+//                writeStream << QDateTime::currentDateTime().toString()<<": [INFO] Started recieved from serial "<<messageInBuffer.adress<<" message with code "<<messageInBuffer.code<<" with size "<<messageInBuffer.opsSize<<"\r\n"; // Посылаем строку в поток для записи
+//                log.close(); // Закрываем файл
+//            }
+//            qDebug()<<"succesfully recieved to "<<messageInBuffer.adress<<" message with code "<<messageInBuffer.code<<" with operands "<<messageInBuffer.operands;
         }
         if(parseBegin && m_readData.size()>= messageInBuffer.opsSize)
         {
@@ -112,13 +128,28 @@ void SerialPortReader::handleReadyRead()
                 messageInBuffer.operands[i]=m_readData[i];
             }
             m_readData.remove(0,messageInBuffer.opsSize);
+//            qDebug()<<"size after parse"<< m_readData.size();
             parseBegin=false;
             parseMessage(messageInBuffer);
+            QFile log("SAML.log");
+            if(log.open(QIODevice::ReadWrite|QIODevice::Append))
+            {
+                QTextStream writeStream(&log); // Создаем объект класса QTextStream
+                writeStream << QDateTime::currentDateTime().toString()<<": [INFO] Finished recieving from serial "<<messageInBuffer.adress<<" message with code "<<messageInBuffer.code<<" with size "<<messageInBuffer.opsSize<<" operands:";
+                for(int i = 0;i<messageInBuffer.operands.size();i++)
+                {
+                    writeStream << static_cast<quint8>(messageInBuffer.operands.at(i))<<" "; // Посылаем строку в поток для записи
+                }
+                writeStream<<"\r\n";
+                log.close(); // Закрываем файл
+            }
             qDebug()<<"succesfully recieved to "<<messageInBuffer.adress<<" message with code "<<messageInBuffer.code<<" with operands "<<messageInBuffer.operands;
 
         }
+        //qDebug()<<"at end buffer size"<<m_readData.size()<<" parseBegin "<<parseBegin<<" opsSize "<<messageInBuffer.opsSize;
         }
     }
+//    qDebug()<<"out of handle";
 
 }
 
@@ -138,6 +169,9 @@ void SerialPortReader::parseMessage(msg message)
     case CODE_NEED_DATA:
         initController(message.operands[0]);
         break;
+    case CODE_LOOP_PING:
+        loopPing(message.operands);
+        break;
     default:
         break;
     }
@@ -148,19 +182,45 @@ void SerialPortReader::parseMessage(msg message)
 }
 }
 
+void SerialPortReader::loopPing(QByteArray ops)
+{
+    this->timer->start();
+//    unsigned long millis = ((ops[0]<<24) + (ops[1]<<16) +(ops[2]<<8) +ops[3]);
+    QFile log("SAML.log");
+    if(log.open(QIODevice::ReadWrite|QIODevice::Append))
+    {
+        QTextStream writeStream(&log); // Создаем объект класса QTextStream
+        unsigned long millis = (ops[1]<<24)+(ops[2]<<16)+(ops[3]<<8)+ops[4];
+        int mem = (ops[5]<<8)+ops[6];
+        writeStream << QDateTime::currentDateTime().toString() << ": [INFO] Recieved ping from "<<this->adress<<". Current uptime in millis "<<millis<<" and free ram "<<mem<<" \r\n"; // Посылаем строку в поток для записи
+        log.close(); // Закрываем файл
+    }
+
+}
+
+
+void SerialPortReader::TimerRunout()
+{
+    this->resetPort();
+}
 void SerialPortReader::initController(quint8 address)
 {
     adress = address;
+
     QProcess getContrParams;
     //qDebug()<<"entered initController()";
     QString exec = "php";
     QStringList params;
-    params << "getActuators.php" << QString::number(address);
+
+    params << "getActuatorsCnt.php" << QString::number(address);
     getContrParams.start(exec, params);
     getContrParams.waitForFinished(); // sets current thread to sleep and waits for pingProcess end
     QString output(getContrParams.readAllStandardOutput());
-    QStringList outputList = output.split(QRegExp("[\r\n]"),QString::SkipEmptyParts);
-    //qDebug()<<outputList;
+    QByteArray buffByte;
+    buffByte.append(output);
+    QJsonDocument document = QJsonDocument::fromJson(buffByte);
+    QJsonObject root = document.object();
+//    qDebug()<<output;
     msg messageToWrite;
     messageToWrite.adress=address;
     messageToWrite.code=CODE_INIT_SYNC;
@@ -168,75 +228,221 @@ void SerialPortReader::initController(quint8 address)
     messageToWrite.operands.resize(2);
     messageToWrite.operands[0]=0;
     messageToWrite.operands[1]=0;
+    messageToWrite.operands+=(((root.value("dOutCnt").toString().toUInt())>>8)&0xFF);
+    messageToWrite.operands+=(((root.value("dOutCnt").toString().toUInt()))&0xFF);
+    messageToWrite.operands+=(((root.value("metaDOutCnt").toString().toUInt())>>8)&0xFF);
+    messageToWrite.operands+=(((root.value("metaDOutCnt").toString().toUInt()))&0xFF);
+    messageToWrite.operands+=(((root.value("dOutRandomizerCnt").toString().toUInt())>>8)&0xFF);
+    messageToWrite.operands+=(((root.value("dOutRandomizerCnt").toString().toUInt()))&0xFF);
+    messageToWrite.operands+=(((root.value("segmentCnt").toString().toUInt())>>8)&0xFF);
+    messageToWrite.operands+=(((root.value("segmentCnt").toString().toUInt()))&0xFF);
+    messageToWrite.operands+=(((root.value("lentCnt").toString().toUInt())>>8)&0xFF);
+    messageToWrite.operands+=(((root.value("lentCnt").toString().toUInt()))&0xFF);
+    messageToWrite.opsSize=messageToWrite.operands.count();
     writeMessage(messageToWrite);
-    for(int i = 0; i<outputList.size();i++)
+
+    QStringList params1;
+    params1 << "getActuators.php" << QString::number(address);
+    getContrParams.start(exec, params1);
+    getContrParams.waitForFinished(); // sets current thread to sleep and waits for pingProcess end
+    QString output1(getContrParams.readAllStandardOutput());
+    buffByte="";
+    buffByte.append(output1);
+    document = QJsonDocument::fromJson(buffByte);
+    root = document.object();
+//    QStringList outputList = output.split(QRegExp("[\r\n]"),QString::SkipEmptyParts);
+    //qDebug()<<outputList;
+    messageToWrite.adress=address;
+    messageToWrite.code=CODE_INIT_SYNC;
+    messageToWrite.opsSize=2;
+    messageToWrite.operands.resize(2);
+    messageToWrite.operands[0]=0;
+    messageToWrite.operands[1]=0;
+    writeMessage(messageToWrite);
+
+    QJsonArray actuators = root.value("actuators").toArray();
+    for(int i = 0; i<actuators.count();i++)
     {
-        QString str=outputList[i];
-        QStringList params=str.split(" ", QString::SkipEmptyParts);
-        switch (params[0].toUInt()) {
+        QJsonObject actuator = actuators.at(i).toObject();
+//        QString str=outputList[i];
+//        QStringList params=str.split(" ", QString::SkipEmptyParts);
+        switch (actuator.value("type").toString().toInt()) {
         case 0:
             messageToWrite.code=CODE_INIT_DOUT;
             messageToWrite.operands="";
-            messageToWrite.operands+=params[2].toUInt();//pin
-            messageToWrite.operands+=((params[3].toUInt()>>8)&0xFF);//num HighByte
-            messageToWrite.operands+=((params[3].toUInt())&0xFF);//num LowByte
+//            messageToWrite.operands+=params[2].toUInt();//pin
+//            messageToWrite.operands+=((params[3].toUInt()>>8)&0xFF);//num HighByte
+//            messageToWrite.operands+=((params[3].toUInt())&0xFF);//num LowByte
 //            messageToWrite.operands+=params[4].toUInt();//mode
+
+            messageToWrite.operands+=actuator.value("pin").toString().toUInt();
+            messageToWrite.operands+=((actuator.value("num").toString().toUInt()>>8)&0xFF);
+            messageToWrite.operands+=((actuator.value("num").toString().toUInt())&0xFF);
+            messageToWrite.opsSize=messageToWrite.operands.size();
             break;
         case 1:
             messageToWrite.code=CODE_INIT_METADOUT;
             messageToWrite.operands="";
-            messageToWrite.operands+=((params[2].toUInt()>>8)&0xFF);//channel HighByte
-            messageToWrite.operands+=((params[2].toUInt())&0xFF);//channel LowByte
-            messageToWrite.operands+=params[3].toUInt();//mode
-            messageToWrite.operands+=params[4].toUInt();//doutCnt
-            for(int j=5;j<params.size();j++)
+//            messageToWrite.operands+=((params[2].toUInt()>>8)&0xFF);//channel HighByte
+//            messageToWrite.operands+=((params[2].toUInt())&0xFF);//channel LowByte
+//            messageToWrite.operands+=params[3].toUInt();//mode
+//            messageToWrite.operands+=params[4].toUInt();//doutCnt
+//            for(int j=5;j<params.size();j++)
+//            {
+//                messageToWrite.operands+=((params[j].toUInt()>>8)&0xFF);//doutnum HighByte
+//                messageToWrite.operands+=((params[j].toUInt())&0xFF);//doutnum LowByte
+//            }
+            messageToWrite.operands+=((actuator.value("channel").toString().toUInt()>>8)&0xFF);
+            messageToWrite.operands+=((actuator.value("channel").toString().toUInt())&0xFF);
+            messageToWrite.operands+=actuator.value("mode").toString().toUInt();
+            messageToWrite.operands+=((actuator.value("num").toString().toUInt()>>8)&0xFF);
+            messageToWrite.operands+=((actuator.value("num").toString().toUInt())&0xFF);
+            if(actuator.keys().contains("segArr"))
             {
-                messageToWrite.operands+=((params[j].toUInt()>>8)&0xFF);//doutnum HighByte
-                messageToWrite.operands+=((params[j].toUInt())&0xFF);//doutnum LowByte
+                messageToWrite.operands+=(unsigned int)actuator.value("segArr").toArray().count();
+                for(int j=0;j<actuator.value("segArr").toArray().count();j++)
+                {
+                    messageToWrite.operands+=((actuator.value("segArr").toArray().at(j).toString().toUInt()>>8)&0xFF);
+                    messageToWrite.operands+=((actuator.value("segArr").toArray().at(j).toString().toUInt())&0xFF);
+                }
+
             }
+            else
+            {
+                messageToWrite.operands.append((char)0x00);
+             //   messageToWrite.operands.append((char)0x00);
+            }
+            if(actuator.keys().contains("segRange"))
+            {
+                messageToWrite.operands+=(unsigned int)actuator.value("segRange").toArray().count();
+                for(int j=0;j<actuator.value("segRange").toArray().count();j++)
+                {
+                    messageToWrite.operands+=((actuator.value("segRange").toArray().at(j).toObject().value("start").toString().toUInt()>>8)&0xFF);
+                    messageToWrite.operands+=((actuator.value("segRange").toArray().at(j).toObject().value("start").toString().toUInt())&0xFF);
+                    messageToWrite.operands+=((actuator.value("segRange").toArray().at(j).toObject().value("end").toString().toUInt()>>8)&0xFF);
+                    messageToWrite.operands+=((actuator.value("segRange").toArray().at(j).toObject().value("end").toString().toUInt())&0xFF);
+                }
+
+            }
+            else
+            {
+                messageToWrite.operands.append((char)0x00);
+               // messageToWrite.operands.append((char)0x00);
+            }
+            messageToWrite.opsSize=messageToWrite.operands.count();
+//            qDebug()<<actuator.value("num").toString();
             break;
         case 2:
             messageToWrite.code=CODE_INIT_SEGM;
             messageToWrite.operands="";
-            messageToWrite.operands+=params[2].toUInt();//pin
-            messageToWrite.operands+=params[3].toUInt();//size
-            messageToWrite.operands+=((params[4].toUInt()>>8)&0xFF);//num HighByte
-            messageToWrite.operands+=((params[4].toUInt())&0xFF);//num LowByte
+//            messageToWrite.operands+=params[2].toUInt();//pin
+//            messageToWrite.operands+=params[3].toUInt();//size
+//            messageToWrite.operands+=((params[4].toUInt()>>8)&0xFF);//num HighByte
+//            messageToWrite.operands+=((params[4].toUInt())&0xFF);//num LowByte
+
+            messageToWrite.operands+=actuator.value("pin").toString().toUInt();
+            messageToWrite.operands+=actuator.value("size").toString().toUInt();
+            messageToWrite.operands+=((actuator.value("num").toString().toUInt()>>8)&0xFF);
+            messageToWrite.operands+=((actuator.value("num").toString().toUInt())&0xFF);
+
             break;
         case 3:
             messageToWrite.code=CODE_INIT_LENT;
             messageToWrite.operands="";
-            messageToWrite.operands+=((params[2].toUInt()>>8)&0xFF);//channel HighByte
-            messageToWrite.operands+=((params[2].toUInt())&0xFF);//channel LowByte
-            messageToWrite.operands+=params[3].toUInt();//mode
-            messageToWrite.operands+=params[4].toUInt();//red
-            messageToWrite.operands+=params[5].toUInt();//green
-            messageToWrite.operands+=params[6].toUInt();//blue
-            messageToWrite.operands+=params[7].toUInt();//segCnt
-            for(int j=8;j<params.size();j++){
-                messageToWrite.operands+=((params[j].toUInt()>>8)&0xFF);//segnum HighByte
-                messageToWrite.operands+=((params[j].toUInt())&0xFF);//segnum LowByte
+//            messageToWrite.operands+=((params[2].toUInt()>>8)&0xFF);//channel HighByte
+//            messageToWrite.operands+=((params[2].toUInt())&0xFF);//channel LowByte
+//            messageToWrite.operands+=params[3].toUInt();//mode
+//            messageToWrite.operands+=params[4].toUInt();//red
+//            messageToWrite.operands+=params[5].toUInt();//green
+//            messageToWrite.operands+=params[6].toUInt();//blue
+//            messageToWrite.operands+=params[7].toUInt();//segCnt
+//            for(int j=8;j<params.size();j++){
+//                messageToWrite.operands+=((params[j].toUInt()>>8)&0xFF);//segnum HighByte
+//                messageToWrite.operands+=((params[j].toUInt())&0xFF);//segnum LowByte
+//            }
+            messageToWrite.operands+=((actuator.value("channel").toString().toUInt()>>8)&0xFF);
+            messageToWrite.operands+=((actuator.value("channel").toString().toUInt())&0xFF);
+            messageToWrite.operands+=actuator.value("mode").toString().toUInt();
+            messageToWrite.operands+=((actuator.value("num").toString().toUInt()>>8)&0xFF);
+            messageToWrite.operands+=((actuator.value("num").toString().toUInt())&0xFF);
+            messageToWrite.operands+=actuator.value("red").toString().toUInt();
+            messageToWrite.operands+=actuator.value("green").toString().toUInt();
+            messageToWrite.operands+=actuator.value("blue").toString().toUInt();
+            if(actuator.keys().contains("segArr"))
+            {
+                messageToWrite.operands+=(unsigned int)actuator.value("segArr").toArray().count();
+                for(int j=0;j<actuator.value("segArr").toArray().count();j++)
+                {
+                    messageToWrite.operands+=((actuator.value("segArr").toArray().at(j).toString().toUInt()>>8)&0xFF);
+                    messageToWrite.operands+=((actuator.value("segArr").toArray().at(j).toString().toUInt())&0xFF);
+                }
+
             }
+            else
+            {
+                messageToWrite.operands.append((char)0x00);
+//                messageToWrite.operands.append((char)0x00);
+            }
+            if(actuator.keys().contains("segRange"))
+            {
+                messageToWrite.operands+=(unsigned int)actuator.value("segRange").toArray().count();
+                for(int j=0;j<actuator.value("segRange").toArray().count();j++)
+                {
+                    messageToWrite.operands+=((actuator.value("segRange").toArray().at(j).toObject().value("start").toString().toUInt()>>8)&0xFF);
+                    messageToWrite.operands+=((actuator.value("segRange").toArray().at(j).toObject().value("start").toString().toUInt())&0xFF);
+                    messageToWrite.operands+=((actuator.value("segRange").toArray().at(j).toObject().value("end").toString().toUInt()>>8)&0xFF);
+                    messageToWrite.operands+=((actuator.value("segRange").toArray().at(j).toObject().value("end").toString().toUInt())&0xFF);
+                }
+
+            }
+            else
+            {
+                messageToWrite.operands.append((char)0x00);
+                //messageToWrite.operands.append((char)0x00);
+            }
+            messageToWrite.opsSize=messageToWrite.operands.count();
+            break;
+        case 4:
+            messageToWrite.code=CODE_INIT_DOUTRANDOMIZER;
+            messageToWrite.operands="";
+            messageToWrite.operands+=((actuator.value("metaDOutNum").toString().toUInt()>>8)&0xFF);
+            messageToWrite.operands+=((actuator.value("metaDOutNum").toString().toUInt())&0xFF);
+            messageToWrite.operands+=actuator.value("randomType").toString().toUInt();
+            messageToWrite.operands+=actuator.value("randomMaxGlobal").toString().toUInt();
+            messageToWrite.operands+=actuator.value("randomMaxPerDevice").toString().toUInt();
+            messageToWrite.operands+=actuator.value("randomTimeout").toString().toUInt();
+            messageToWrite.opsSize=messageToWrite.operands.count();
+//            qDebug()<<actuator.value("metaDOutNum").toString()<<" "<<actuator.value("randomType").toString()<<" ";
             break;
         default:
             break;
         }
         writeMessage(messageToWrite);
+//        qDebug()<<"adres " <<messageToWrite.adress<<" code "<<messageToWrite.code<<" opsSize "<<messageToWrite.opsSize;
     }
     messageToWrite.adress=adress;
     messageToWrite.code=CODE_END_SYNC;
     messageToWrite.opsSize=1;
     messageToWrite.operands="";
-    messageToWrite.operands+=outputList.size();
+    messageToWrite.operands+=actuators.count();
+    QFile log("SAML.log");
+    if(log.open(QIODevice::ReadWrite|QIODevice::Append))
+    {
+        QTextStream writeStream(&log); // Создаем объект класса QTextStream
+        writeStream << QDateTime::currentDateTime().toString() << ": [INFO] initiated Serial"<<this->m_serialPort->portName()<<" controller "<<this->adress <<" with actCnt"<<actuators.count()<<"\r\n"; // Посылаем строку в поток для записи
+        log.close(); // Закрываем файл
+    }
     writeMessage(messageToWrite);
+//    qDebug()<<"adres " <<messageToWrite.adress<<" code "<<messageToWrite.code<<" opsSize "<<messageToWrite.opsSize;
 }
 void SerialPortReader::actChannel(int channel)
 {
 	msg message;
 	message.adress = 255;
 	message.code = CODE_ACT_CNL;
-	message.opsSize = 1;
-	message.operands += channel;
+    message.opsSize = 2;
+    message.operands += (quint8)(channel>>8)&0xFF;
+    message.operands+=(quint8)channel&0xFF;
 	writeMessage(message);
 
 }
@@ -245,8 +451,9 @@ void SerialPortReader::deactChannel(int channel)
 	msg message;
 	message.adress = 255;
 	message.code = CODE_DEACT_CNL;
-	message.opsSize = 1;
-	message.operands += channel;
+    message.opsSize = 2;
+    message.operands += (channel>>8)&0xFF;
+    message.operands+=channel&0xFF;
 	writeMessage(message);
 
 }
@@ -274,9 +481,13 @@ void SerialPortReader::writeMessage(msg message)
     QByteArray messageAsArr;
     messageAsArr+=message.adress;
     messageAsArr+=message.code;
+    messageAsArr+=(message.opsSize>>8)&0xFF;
+    messageAsArr+=message.opsSize&0xFF;
     messageAsArr+=message.operands;
+    qDebug()<<messageAsArr;
     m_serialPort->write(messageAsArr);
-    //qDebug()<<messageAsArr;
+//    QTest::qWait(100);
+//    qDebug()<<messageAsArr;
 }
 
 void SerialPortReader::resetPort()
@@ -285,8 +496,18 @@ void SerialPortReader::resetPort()
     parseBegin=false;
     messageInBuffer.adress=0;
     messageInBuffer.code=0;
+    messageInBuffer.opsSize=0;
+    this->parseBegin=false;
     messageInBuffer.operands="";
     m_readData="";
-    qDebug()<<"restarted";
+    QFile log("SAML.log");
+    if(log.open(QIODevice::ReadWrite|QIODevice::Append))
+    {
+        QTextStream writeStream(&log); // Создаем объект класса QTextStream
+        writeStream << QDateTime::currentDateTime().toString()<<": [WARNING] Restarted serial "<<m_serialPort->portName()<<"\r\n"; // Посылаем строку в поток для записи
+        log.close(); // Закрываем файл
+    }
+    //qDebug()<<"restarted";
+    this->timer->start();
     m_serialPort->open(QIODevice::ReadWrite);
 }

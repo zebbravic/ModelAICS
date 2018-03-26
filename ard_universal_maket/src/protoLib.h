@@ -3,56 +3,24 @@
 #ifndef _PROTOLIB_h
 #define _PROTOLIB_h
 
-#include "LentLib.h"
+#define LENTS_USE 0
+#if LENTS_USE==1
+	#include "LentLib.h"
+#endif
 #include "constants.h"
+#include "MemoryFree.h"
 #if defined(ARDUINO) && ARDUINO >= 100
 	#include "arduino.h"
 #else
 	#include "WProgram.h"
 #endif
 
-#define MODE_BYTES 0
-#define MODE_ASCII 48
-
-#define DOUT_MODE_CONST 0
-#define DOUT_MODE_BLINK 1
-#define DOUT_MODE_PWM 2
-
-#define WORKMODE_BOOT 0
-#define WORKMODE_INIT 1
-#define WORKMODE_NORMAL  2
-//group Initializing codes
-
-#define CODE_REBOOTED 0
-#define CODE_NEED_DATA 1
-
-#define CODE_INIT_SYNC 2
-#define CODE_SYNC 3
-#define CODE_END_SYNC 4
-#define CODE_BLOCK_ERR 5
-
-// group Pin Modes Codes
-// #define CODE_INIT_DOUT 9
-#define CODE_INIT_DOUT 16
-#define CODE_INIT_METADOUT 17
-
-// #define CODE_INIT_DOUT 6
-// #define CODE_INIT_METADOUT 7
-
-// #define CODE_ACT_CNL 8
-#define CODE_ACT_CNL 24
-#define CODE_DEACT_CNL 25
-#define CODE_DEACT_ALL 26
-// #define CODE_DEACT_ALL 9
-#define CODE_DEACT_LAST 27
-
-
 
 struct msg
 {
 	byte adress;
 	byte code;
-	byte opsSize;
+	word opsSize;
 	byte *operands;
 };
 
@@ -63,16 +31,36 @@ struct DOut
 	//unsigned long int timeout;
 };
 
+struct DOutRange
+{
+	word startDOut;
+	word endDOut;
+};
+
+struct DOutRandomizer
+{
+	byte type;
+	byte maxGlobal;
+	byte maxPerDevice;
+	byte maxCnt;
+	unsigned long timeout;
+	word* randomArr;
+};
+
 struct metaDOut
 {
 	word channel;
 	byte mode;
 	byte channelState;
 	byte DOutCnt;
-	word* dOutArr;
+	byte* dOutArr; //from 15.03 storages indexes of dOuts. С 15.03 хранит индексы нужных DOut из массиве dOuts
+	byte DOutRangeCnt;
+	DOutRange* range;
 	byte state;
 	byte intens;
 	byte direction;
+	word num;
+	DOutRandomizer* randomizer;
 	unsigned long stepTimout;
 
 };
@@ -86,7 +74,7 @@ struct ActCnl
 
 
 void writeMsg(msg message, byte port);
-void initCntrl(byte tmode, byte taddress);
+void initCntrl();
 void dataRequest();
 void parseRecieveMsg(msg rcvMsg);
 void parseAdressMsg(msg message);
@@ -94,10 +82,17 @@ msg parseBuffer();
 byte checkState();
 bool addDOut(byte* params);
 bool addMetaDOut(byte* params);
+bool addDOutRandomizer(byte* params);
 void beginInit(byte* params);
 void endInit(byte* params);
 void sync();
 void sendSyncErr();
+void sendLoopPing();
+
+bool checkWordInArr(word value, word* arr, byte arrSize);
+bool checkByteInArr(byte value, byte* arr, byte arrSize);
+bool checkWordInRangeArr(word value, DOutRange* arr, byte arrSize);
+byte findNumInDOutsArr(word value);
 
 void actChannel(byte* params);
 void deactChannel(byte* params);
@@ -111,7 +106,8 @@ void checkMetaDOut();
 
 byte getActCnlNum();
 
-metaDOut lightOnConst(metaDOut tMetaDout);
-metaDOut lightOnBlinkDO(metaDOut tMetaDout);
-metaDOut lightOnPWM(metaDOut tMetaDout);
+void lightOnConst(metaDOut* tMetaDout);
+void lightOnBlinkDO(metaDOut* tMetaDout);
+void lightOnPWM(metaDOut* tMetaDout);
+void lightOnRandom(metaDOut* tMetaDout);
 #endif
