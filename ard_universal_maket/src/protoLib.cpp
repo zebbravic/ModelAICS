@@ -3,7 +3,7 @@
 //
 
 #include "protoLib.h"
-#define ADDRESS 1
+#define ADDRESS 7
 #define MODE_CTRL MODE_BYTES
 
 word dOutNum=0, metaDOutNum=0, actCnlNum=0, state=WORKMODE_BOOT, dOutRandomizerCnt=0;
@@ -230,7 +230,7 @@ msg parseBuffer()
 		{
 			while (Serial.available()<buffMessage.opsSize)
 			{
-				true;
+				//true;
 			}
 		byte i = 0;
 		// byte* ops = new byte[buffMessage.opsSize];
@@ -596,7 +596,7 @@ bool addMetaDOut(byte* params)
 	// }
 	if(!flag)
 	{
-		msg infoMsg;
+		//msg infoMsg;
 		// infoMsg.adress = 0;
 		// infoMsg.code = 144;
 		// infoMsg.opsSize = 0;
@@ -1002,7 +1002,7 @@ void checkMetaDOut()
 	{
 		if(metaDOuts[i]->channelState)
 		{
-			msg initmsg;
+			//msg initmsg;
 			// initmsg.adress = 0;
 			// initmsg.code = CODE_INFO;
 			// initmsg.opsSize = 2;
@@ -1017,7 +1017,7 @@ void checkMetaDOut()
 				case DOUT_MODE_CONST: lightOnConst(metaDOuts[i]);break;
 				case DOUT_MODE_BLINK: lightOnBlinkDO(metaDOuts[i]); break;
 				case DOUT_MODE_PWM:lightOnPWM(metaDOuts[i]);break;
-				case DOUT_MODE_RANDOM: {
+				case DOUT_MODE_RANDOM: {lightOnRandom(metaDOuts[i]);break;
 					// msg initmsg;
 					// Serial.println("entered actMetaDOut");
 					// initmsg.adress = 0;
@@ -1030,7 +1030,7 @@ void checkMetaDOut()
 					// initmsg.operands = ops;
 					// writeMsg(initmsg,0);
 					// delete[] ops;
-					lightOnRandom(metaDOuts[i]);break;}
+					}
 
 				default: break;
 			}
@@ -1211,7 +1211,7 @@ void lightOnPWM(metaDOut* tMetaDOut)
 
 void lightOnRandom(metaDOut* tMetaDout)
 {
-	msg initmsg;
+	//msg initmsg;
 	// initmsg.adress = 0;
 	// initmsg.code = CODE_INFO;
 	// initmsg.opsSize = 5;
@@ -1257,69 +1257,51 @@ bool checkWordInArr(word value, word* arr, byte arrSize)
 {
 	byte i = 0;
 
-	while(i<arrSize&&arr[i]!=value)
+	while(i<arrSize)
 	{
+		if (arr[i]==value)
+			return true;
 		i++;
 	}
-	if(i<arrSize)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return false;
+
 }
 bool checkByteInArr(byte value, byte* arr, byte arrSize)
 {
 	byte i = 0;
 
-	while(i<arrSize&&arr[i]!=value)
+	while(i<arrSize)
 	{
+		if (arr[i]==value)
+			return true;
 		i++;
 	}
-	if(i<arrSize)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return false;
 }
 bool checkWordInRangeArr(word value, DOutRange* arr, byte arrSize)
 {
 	byte i = 0;
-	while(i<arrSize && (!((arr[i].startDOut<=value)&&(arr[i].endDOut>=value))))
+	while(i<arrSize)
 	{
+		if ((arr[i].startDOut<=value)&&(arr[i].endDOut>=value))
+			return true;
 		i++;
 	}
-	if(i<arrSize)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return false;
 }
 
 
 byte findNumInDOutsArr(word value)
 {
 	byte i=0;
-	while(i<dOutNum && dOuts[i]->num != value)
+	while(i<dOutNum)
 	{
+		if (dOuts[i]->num == value)
+			return i;
 		i++;
 	}
-	if(i<dOutNum)
-	{
-		return i;
-	}
-	else
-	{
-		return 255;
-	}
+	return 255;
+
 }
 
 // void actDOut(byte channel)

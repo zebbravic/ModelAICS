@@ -2,7 +2,7 @@
 	require_once 'ProgressBar/Manager.php';
 	require_once 'ProgressBar/Registry.php';
 	$hostname = "localhost";
-	$username = "root";
+	$username = "installer";
 	$password = "sLacia2017";
 	$dbName = "maket_info";
 	$sections=array();

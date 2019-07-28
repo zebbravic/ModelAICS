@@ -1,2 +1,6 @@
 ard_universal_maket_logger/*
 build-SerialArduinoMaketListener-Desktop_Qt_5_8_0_GCC_64bit-Debug/*
+ard_universal_maket/.pio/*
+ard_universal_maket/.pioenvs/*
+ard_universal_maket/.piolibdeps/*
+ard_universal_maket/.piovscode/*
